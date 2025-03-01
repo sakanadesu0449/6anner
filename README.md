@@ -10,9 +10,9 @@
 
 ## useage:
 
-- [ ] ###### clone 6anner.py
+- ### clone 6anner.py
 
-- [ ] ###### add `python [the script file's path]` to your `.bashrc` or any terminal user-profile
+- ### add `python [the script file's path]` to your `.bashrc` or any terminal user-profile
 
   
 
