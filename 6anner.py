@@ -4,26 +4,35 @@ import random
 import requests
 
 PARENT = 'json'
+OS_SEP = os.sep
+USER = '.6anner'
+USER_PROFILE = 'user_profile.json'
+
+DEFAULT_USER_PROFILE_SETTIGS = {
+	'online_mode': True,
+	'online_mode_settings': {
+		'timeout': 3,
+		'site': 'hzzm',
+		'type': ['ts', 'sc', 'ss'],
+		'cache': False
+	}
+}
+
 class BError(Exception):
 	pass
 
 class Robots():
 	@classmethod
-	def robot(cls, site: str, types: list[str]):
-
+	def robot(cls, site: str, timeout: bool, types: list[str]):
 		SITES = {
-			'hzmm': RobotHZZM
+			'hzzm': RobotHZZM
 		}
-		TYPES = ['ts', 'ss', 'sc']
 		if site not in SITES:
 			raise ValueError(f'unknown site: {site}')
-		for _t in types:
-			if _t not in TYPES:
-				raise ValueError(f'unknown type: {_t}')
 
-		return SITES[site](types)
+		return SITES[site](timeout, types)
 
-	def __init__(self, types: list[str]):
+	def __init__(self, timeout, types: list[str]):
 		self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0'
 
 		self.types = types
@@ -65,39 +74,46 @@ class RobotHZZM(Robots):
 
 		return random.choice(verse_list), self.dynastys[_type], author
 
+	def run(self) -> tuple:
+		TYPES = ['ts', 'ss', 'sc']
+		for _type in self.types:
+			if _type not in TYPES:
+				raise ValueError(f'unknown type: {_type}')
+
+		verse = self.get_rand_verse()
+		return verse
 
 
-def get_random_file(parent: str) -> str:
+def user_profile() -> dict:
+	USER_PROFILE_PATH = f'{USER}{OS_SEP}{USER_PROFILE}'
 
-	_dir = os.path.dirname(__file__)
-	json_parent_dir = os.path.join(_dir, parent)
+	if not os.path.exists(USER):
+		os.mkdir(USER)
+	with open(USER_PROFILE_PATH, 'r+', encoding = 'utf-8') as _user_profile_f:
+		try:
+			user_profile = json.loads(_user_profile_f.read())
 
-	files = [os.path.join(json_parent_dir, _f) for _f in os.listdir(json_parent_dir)]
-	return random.choice(files)
+		except json.JSONDecodeError as _e:
+			json.dump(DEFAULT_USER_PROFILE_SETTIGS, _user_profile_f, indent = 4)
+			return DEFAULT_USER_PROFILE_SETTIGS
 
-if __name__ == '__main__':
+	return user_profile
 
-	r = Robots.robot('hzmm', ['ts', 'ss', 'sc'])
-	verses = r.get_rand_verse()
+
+
+def main() -> None:
+	_user_profile = user_profile()
+	if _user_profile['online_mode'] is True:
+		r = Robots.robot(
+			_user_profile['online_mode_settings']['site'],
+			_user_profile['online_mode_settings']['timeout'],
+			_user_profile['online_mode_settings']['type']
+		)
+		verses = r.run()
+
 	print(f'{verses[0]}\n              {verses[1]} - {verses[2]}')
 
 
 
-
-'''
-	file_path = get_random_file(PARENT)
-	if 'song' in file_path:
-		dynasty = '宋'
-	else:
-		dynasty = '唐'
-	with open(file_path, 'r', encoding = 'utf-8') as _json:
-		paragraphs_list = json.loads(_json.read())
-		rand_paragraph = random.choice(paragraphs_list)
-		rand_verse = random.choice(rand_paragraph['paragraphs'])
-		rand_verse_poet = rand_paragraph['author']
-
-		print(rand_verse)
-		print(f'                {dynasty} - {rand_verse_poet}')
-'''
-
-
+if __name__ == '__main__':
+	main()
